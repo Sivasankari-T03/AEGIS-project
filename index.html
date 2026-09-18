@@ -1,14 +1,14 @@
 /* =========================================================================
-       3. Dynamic Universal Algorithm AI Engine
-       ========================================================================= */
+   3. Dynamic Universal Algorithm AI Engine
+   ========================================================================= */
 
-    // Knowledge base for structured algorithm domains
-    const ALGO_DOMAINS = [
-      {
-        keywords: ['sudoku', 'n-queen', 'backtrack', 'puzzle', 'crossword', 'sat', 'constraint'],
-        primary: "Backtracking Search (Constraint Satisfaction)",
-        summary: "Analyzed constraint satisfaction domain. Solves problems recursively by making tentative assignments and undoing (backtracking) invalid branches upon hitting violations.",
-        code: `// Universal Backtracking Search Template
+// Knowledge base for structured algorithm domains
+const ALGO_DOMAINS = [
+  {
+    keywords: ['sudoku', 'n-queen', 'backtrack', 'puzzle', 'crossword', 'sat', 'constraint'],
+    primary: "Backtracking Search (Constraint Satisfaction)",
+    summary: "Analyzed constraint satisfaction domain. Solves problems recursively by making tentative assignments and undoing (backtracking) invalid branches upon hitting violations.",
+    code: `// Universal Backtracking Search Template
 function solveBacktracking(state) {
   if (isComplete(state)) return true; // Solution found
   
@@ -21,17 +21,17 @@ function solveBacktracking(state) {
   }
   return false; // Trigger backtrack
 }`,
-        ranked: [
-          { name: "Backtracking Search", score: "99%", time: "O(b^d)", space: "O(d)", optimal: "Yes", desc: "Systematic recursive exploration of candidate solutions with state-reversal." },
-          { name: "Constraint Propagation (AC-3)", score: "88%", time: "O(e * d^3)", space: "O(e)", optimal: "Partial", desc: "Prunes invalid choices upfront to shrink the decision tree." },
-          { name: "Dancing Links (DLX / Alg X)", score: "94%", time: "O(V + E)", space: "O(V)", optimal: "Yes", desc: "Knuth's exact cover matrix manipulation technique." }
-        ]
-      },
-      {
-        keywords: ['sort', 'order', 'arrange', 'rank', 'quick', 'merge', 'heap'],
-        primary: "Divide and Conquer (QuickSort / MergeSort)",
-        summary: "Analyzed sequence ordering domain. Deconstructs data collections into smaller sub-problems, sorts sub-arrays recursively, and combines them into an ordered list.",
-        code: `// Universal QuickSort Implementation
+    ranked: [
+      { name: "Backtracking Search", score: "99%", time: "O(b^d)", space: "O(d)", optimal: "Yes", desc: "Systematic recursive exploration of candidate solutions with state-reversal." },
+      { name: "Constraint Propagation (AC-3)", score: "88%", time: "O(e * d^3)", space: "O(e)", optimal: "Partial", desc: "Prunes invalid choices upfront to shrink the decision tree." },
+      { name: "Dancing Links (DLX / Alg X)", score: "94%", time: "O(V + E)", space: "O(V)", optimal: "Yes", desc: "Knuth's exact cover matrix manipulation technique." }
+    ]
+  },
+  {
+    keywords: ['sort', 'order', 'arrange', 'rank', 'quick', 'merge', 'heap'],
+    primary: "Divide and Conquer (QuickSort / MergeSort)",
+    summary: "Analyzed sequence ordering domain. Deconstructs data collections into smaller sub-problems, sorts sub-arrays recursively, and combines them into an ordered list.",
+    code: `// Universal QuickSort Implementation
 function quickSort(arr, low = 0, high = arr.length - 1) {
   if (low < high) {
     let pivotIndex = partition(arr, low, high);
@@ -40,17 +40,17 @@ function quickSort(arr, low = 0, high = arr.length - 1) {
   }
   return arr;
 }`,
-        ranked: [
-          { name: "QuickSort", score: "97%", time: "O(N log N)", space: "O(log N)", optimal: "Yes", desc: "In-place partition algorithm optimized for CPU cache efficiency." },
-          { name: "MergeSort", score: "92%", time: "O(N log N)", space: "O(N)", optimal: "Yes", desc: "Stable divide-and-conquer strategy with guaranteed performance." },
-          { name: "HeapSort", score: "86%", time: "O(N log N)", space: "O(1)", optimal: "Yes", desc: "Selection algorithm powered by binary heap priority queues." }
-        ]
-      },
-      {
-        keywords: ['pac', 'ghost', 'path', 'route', 'shortest', 'map', 'gps', 'navigate', 'flight', 'traffic', 'delivery'],
-        primary: "A* Search & Priority Graph Pathfinding",
-        summary: "Analyzed spatial graph navigation domain. Traverses weighted graph nodes by combining actual path cost g(n) with estimated heuristic distance h(n) to the destination.",
-        code: `// A* Pathfinding Core Logic
+    ranked: [
+      { name: "QuickSort", score: "97%", time: "O(N log N)", space: "O(log N)", optimal: "Yes", desc: "In-place partition algorithm optimized for CPU cache efficiency." },
+      { name: "MergeSort", score: "92%", time: "O(N log N)", space: "O(N)", optimal: "Yes", desc: "Stable divide-and-conquer strategy with guaranteed performance." },
+      { name: "HeapSort", score: "86%", time: "O(N log N)", space: "O(1)", optimal: "Yes", desc: "Selection algorithm powered by binary heap priority queues." }
+    ]
+  },
+  {
+    keywords: ['pac', 'ghost', 'path', 'route', 'shortest', 'map', 'gps', 'navigate', 'flight', 'traffic', 'delivery'],
+    primary: "A* Search & Priority Graph Pathfinding",
+    summary: "Analyzed spatial graph navigation domain. Traverses weighted graph nodes by combining actual path cost g(n) with estimated heuristic distance h(n) to the destination.",
+    code: `// A* Pathfinding Core Logic
 function aStarSearch(start, goal) {
   let openSet = [start];
   let gScore = {}, fScore = {};
@@ -72,17 +72,17 @@ function aStarSearch(start, goal) {
     }
   }
 }`,
-        ranked: [
-          { name: "A* Search", score: "98%", time: "O(E)", space: "O(V)", optimal: "Yes", desc: "Optimal pathfinding balancing heuristic cost estimates." },
-          { name: "Dijkstra's Algorithm", score: "90%", time: "O(E log V)", space: "O(V)", optimal: "Yes", desc: "Guaranteed shortest path across non-negative weighted edges." },
-          { name: "Breadth-First Search (BFS)", score: "78%", time: "O(V + E)", space: "O(V)", optimal: "Yes (Unweighted)", desc: "Explores all node neighbors level-by-level." }
-        ]
-      },
-      {
-        keywords: ['chess', 'game', 'minimax', 'player', 'enemy', 'adversarial', 'tic-tac-toe', 'turn'],
-        primary: "Adversarial Minimax Search with Alpha-Beta Pruning",
-        summary: "Analyzed multi-agent game domain. Evaluates decision trees by maximizing agent score while assuming opponent plays optimal moves.",
-        code: `// Minimax with Alpha-Beta Pruning
+    ranked: [
+      { name: "A* Search", score: "98%", time: "O(E)", space: "O(V)", optimal: "Yes", desc: "Optimal pathfinding balancing heuristic cost estimates." },
+      { name: "Dijkstra's Algorithm", score: "90%", time: "O(E log V)", space: "O(V)", optimal: "Yes", desc: "Guaranteed shortest path across non-negative weighted edges." },
+      { name: "Breadth-First Search (BFS)", score: "78%", time: "O(V + E)", space: "O(V)", optimal: "Yes (Unweighted)", desc: "Explores all node neighbors level-by-level." }
+    ]
+  },
+  {
+    keywords: ['chess', 'game', 'minimax', 'player', 'enemy', 'adversarial', 'tic-tac-toe', 'turn'],
+    primary: "Adversarial Minimax Search with Alpha-Beta Pruning",
+    summary: "Analyzed multi-agent game domain. Evaluates decision trees by maximizing agent score while assuming opponent plays optimal moves.",
+    code: `// Minimax with Alpha-Beta Pruning
 function minimax(node, depth, alpha, beta, isMaximizing) {
   if (depth === 0 || isTerminal(node)) return evaluate(node);
   
@@ -97,22 +97,22 @@ function minimax(node, depth, alpha, beta, isMaximizing) {
     return maxEval;
   }
 }`,
-        ranked: [
-          { name: "Minimax + Alpha-Beta", score: "97%", time: "O(b^(m/2))", space: "O(bm)", optimal: "Yes", desc: "Prunes non-optimal decision branches to speed up search." },
-          { name: "Monte Carlo Tree Search", score: "91%", time: "O(N * Sim)", space: "O(V)", optimal: "Probabilistic", desc: "Uses random rollouts for vast state spaces like Go or Chess." }
-        ]
-      }
-    ];
+    ranked: [
+      { name: "Minimax + Alpha-Beta", score: "97%", time: "O(b^(m/2))", space: "O(bm)", optimal: "Yes", desc: "Prunes non-optimal decision branches to speed up search." },
+      { name: "Monte Carlo Tree Search", score: "91%", time: "O(N * Sim)", space: "O(V)", optimal: "Probabilistic", desc: "Uses random rollouts for vast state spaces like Go or Chess." }
+    ]
+  }
+];
 
-    // Dynamic generator for unrecognized or custom user inputs
-    function generateDynamicAnalysis(query) {
-      const clean = query.replace(/[^a-zA-Z0-9 ]/g, "").trim();
-      const cap = clean.charAt(0).toUpperCase() + clean.slice(1);
+// Dynamic generator for unrecognized or custom user inputs
+function generateDynamicAnalysis(query) {
+  const clean = query.replace(/[^a-zA-Z0-9 ]/g, "").trim();
+  const cap = clean.charAt(0).toUpperCase() + clean.slice(1);
 
-      return {
-        primary: `Dynamic State-Space Search (${cap})`,
-        summary: `Analyzed customized input "${clean}". Evaluated state space transformations, graph nodes, and heuristic evaluation functions tailored for this scenario.`,
-        code: `// Dynamic Algorithm Engine for: ${cap}
+  return {
+    primary: `Dynamic State-Space Search (${cap})`,
+    summary: `Analyzed customized input "${clean}". Evaluated state space transformations, graph nodes, and heuristic evaluation functions tailored for this scenario.`,
+    code: `// Dynamic Algorithm Engine for: ${cap}
 function solveScenario(inputData) {
   let state = initializeStateSpace(inputData);
   let frontier = new PriorityQueue();
@@ -129,31 +129,60 @@ function solveScenario(inputData) {
   }
   return null; // Search completed
 }`,
-        ranked: [
-          { name: "State-Space Heuristic Search", score: "94%", time: "O(b^d)", space: "O(b^d)", optimal: "Yes", desc: "Systematically navigates decision transitions using heuristic bounds." },
-          { name: "Dynamic Programming", score: "88%", time: "O(N * K)", space: "O(N)", optimal: "Yes", desc: "Memoizes overlapping sub-problems to prevent duplicate computation." },
-          { name: "Greedy Best-First Search", score: "72%", time: "O(b * m)", space: "O(b * m)", optimal: "No", desc: "Selects locally optimal paths at each decision node." }
-        ]
-      };
+    ranked: [
+      { name: "State-Space Heuristic Search", score: "94%", time: "O(b^d)", space: "O(b^d)", optimal: "Yes", desc: "Systematically navigates decision transitions using heuristic bounds." },
+      { name: "Dynamic Programming", score: "88%", time: "O(N * K)", space: "O(N)", optimal: "Yes", desc: "Memoizes overlapping sub-problems to prevent duplicate computation." },
+      { name: "Greedy Best-First Search", score: "72%", time: "O(b * m)", space: "O(b * m)", optimal: "No", desc: "Selects locally optimal paths at each decision node." }
+    ]
+  };
+}
+
+/* =========================================================================
+   4. Query Processing Engine
+   ========================================================================= */
+function processQuery(queryText) {
+  if (!queryText || queryText.trim() === '') return;
+  const q = queryText.toLowerCase().trim();
+  
+  let matched = null;
+  for (let domain of ALGO_DOMAINS) {
+    if (domain.keywords.some(k => q.includes(k))) {
+      matched = domain;
+      break;
     }
+  }
 
-    /* =========================================================================
-       4. Query Processing Engine
-       ========================================================================= */
-    function processQuery(queryText) {
-      if (!queryText || queryText.trim() === '') return;
-      const q = queryText.toLowerCase().trim();
-      
-      let matched = null;
-      for (let domain of ALGO_DOMAINS) {
-        if (domain.keywords.some(k => q.includes(k))) {
-          matched = domain;
-          break;
-        }
-      }
+  const data = matched || generateDynamicAnalysis(queryText);
 
-      const data = matched || generateDynamicAnalysis(queryText);
-             /* =========================================================================
+  // Render UI Cards & Dashboard
+  document.getElementById('analysis-summary').innerHTML = `
+    <p class="font-semibold text-blue-400">${data.primary}</p>
+    <p>${data.summary}</p>
+  `;
+
+  const listContainer = document.getElementById('ranked-algorithms');
+  listContainer.innerHTML = '';
+  data.ranked.forEach((item, index) => {
+    listContainer.innerHTML += `
+      <div class="bg-slate-800/80 border ${index === 0 ? 'border-blue-500/80 shadow-md shadow-blue-500/20' : 'border-slate-700/50'} p-2.5 rounded-lg text-xs hover:border-blue-400 transition cursor-pointer">
+        <div class="flex justify-between font-bold text-slate-200">
+          <span>${index + 1}. ${item.name}</span>
+          <span class="${index === 0 ? 'text-blue-400' : 'text-slate-400'}">${item.score} Match</span>
+        </div>
+        <p class="text-[11px] text-slate-400 mt-1">${item.desc}</p>
+        <div class="flex space-x-3 mt-1.5 text-[10px] text-slate-300 font-mono">
+          <span>Time: ${item.time}</span>
+          <span>Space: ${item.space}</span>
+        </div>
+      </div>
+    `;
+  });
+
+  document.getElementById('code-view').innerText = data.code;
+  build3DGraphVisualization();
+}
+
+/* =========================================================================
    Event Listeners & Driver Code
    ========================================================================= */
 
