@@ -153,6 +153,109 @@ function solveScenario(inputData) {
       }
 
       const data = matched || generateDynamicAnalysis(queryText);
+             /* =========================================================================
+   Event Listeners & Driver Code
+   ========================================================================= */
+
+// Trigger analysis when clicking the "Analyze" button
+document.getElementById('analyze-btn').addEventListener('click', () => {
+  const queryInput = document.getElementById('query-input').value;
+  processQuery(queryInput);
+});
+
+// Trigger analysis when pressing "Enter" inside the input box
+document.getElementById('query-input').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    processQuery(e.target.value);
+  }
+});
+
+// Voice Input Processing (Web Speech API)
+const micBtn = document.getElementById('mic-btn');
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognition = new SpeechRecognition();
+
+  micBtn.addEventListener('click', () => {
+    recognition.start();
+    micBtn.classList.add('text-red-500', 'animate-pulse');
+  });
+
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    document.getElementById('query-input').value = transcript;
+    micBtn.classList.remove('text-red-500', 'animate-pulse');
+    processQuery(transcript);
+  };
+
+  recognition.onerror = () => {
+    micBtn.classList.remove('text-red-500', 'animate-pulse');
+  };
+}
+
+/* =========================================================================
+   3D Node Generator & Dynamic Step Builder
+   ========================================================================= */
+function build3DGraphVisualization() {
+  // Clear previous 3D graph objects
+  if (typeof nodeMeshes !== 'undefined') nodeMeshes.forEach(n => scene.remove(n));
+  if (typeof edgeLines !== 'undefined') edgeLines.forEach(e => scene.remove(e));
+  if (typeof agentMesh !== 'undefined' && agentMesh) scene.remove(agentMesh);
+  
+  nodeMeshes = []; 
+  edgeLines = [];
+
+  // Generate 3D grid layout coordinates
+  const positions = [
+    { x: -8, z: -6 }, { x: -3, z: -6 }, { x: 3, z: -6 }, { x: 8, z: -6 },
+    { x: -8, z: 0 },  { x: 0, z: 0 },   { x: 8, z: 0 },
+    { x: -5, z: 6 },  { x: 5, z: 6 }
+  ];
+
+  const sphereGeo = new THREE.SphereGeometry(0.6, 32, 32);
+  positions.forEach((pos) => {
+    const mat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.8 });
+    const mesh = new THREE.Mesh(sphereGeo, mat);
+    mesh.position.set(pos.x, 0.6, pos.z);
+    mesh.castShadow = true;
+    scene.add(mesh);
+    nodeMeshes.push(mesh);
+  });
+
+  // Construct node connections (Edges)
+  const connections = [[0,1], [1,2], [2,3], [0,4], [1,5], [3,6], [4,7], [5,7], [5,8], [6,8]];
+  const lineMat = new THREE.LineBasicMaterial({ color: 0x334155, linewidth: 2 });
+  
+  connections.forEach(([i, j]) => {
+    const points = [nodeMeshes[i].position, nodeMeshes[j].position];
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const line = new THREE.Line(geometry, lineMat);
+    scene.add(line);
+    edgeLines.push(line);
+  });
+
+  // Create 3D Agent Marker
+  const agentGeo = new THREE.ConeGeometry(0.5, 1.2, 16);
+  const agentMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706, emissiveIntensity: 0.6 });
+  agentMesh = new THREE.Mesh(agentGeo, agentMat);
+  agentMesh.rotation.x = Math.PI / 2;
+  agentMesh.position.copy(nodeMeshes[0].position);
+  agentMesh.position.y = 1.5;
+  scene.add(agentMesh);
+
+  // Set default step sequence
+  animationSteps = [
+    { node: 0, cost: 0, text: "Step 1: Initializing search frontier at Start Node 0" },
+    { node: 1, cost: 2, text: "Step 2: Evaluating state expansion on Node 1" },
+    { node: 5, cost: 5, text: "Step 3: Calculating heuristic weight f(n) = g(n) + h(n) on Node 5" },
+    { node: 8, cost: 9, text: "Step 4: Goal condition satisfied! Optimal trajectory constructed." }
+  ];
+
+  // Reset animation step timeline
+  if (typeof setStep === 'function') {
+    setStep(0);
+  }
+}
 
       // Render UI Cards & Dashboard
       document.getElementById('analysis-summary').innerHTML = `
