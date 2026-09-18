@@ -3,279 +3,237 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AEGIS - Dynamic Universal Algorithm AI Engine</title>
-  <!-- Tailwind CSS CDN -->
+  <title>AEGIS - Conversational AI with 3D Motion</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Three.js Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 font-sans min-h-screen">
 
-  <!-- Header -->
   <header class="border-b border-slate-800 p-4 bg-slate-950/50 backdrop-blur">
     <div class="max-w-7xl mx-auto flex justify-between items-center">
       <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-teal-400 bg-clip-text text-transparent">
-        AEGIS Engine
+        AEGIS Conversational Engine
       </h1>
-      <span class="text-xs text-slate-400 font-mono">Status: Active</span>
+      <span class="text-xs text-slate-400 font-mono">Status: Ready</span>
     </div>
   </header>
 
-  <!-- Main Container -->
   <main class="max-w-7xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
     
-    <!-- Control Panel & Search -->
+    <!-- Left Column: API Key & Chat Input -->
     <section class="lg:col-span-1 space-y-4">
+      <!-- API Key Setup -->
       <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-4">
-        <label class="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">Algorithm Query</label>
+        <label class="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">Gemini API Key</label>
+        <input id="api-key-input" type="password" placeholder="Paste AI Studio Key Here..." 
+          class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-xs focus:outline-none focus:border-blue-500 text-slate-100">
+      </div>
+
+      <!-- Search Input -->
+      <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-4">
+        <label class="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">Ask Anything</label>
         <div class="relative flex items-center">
-          <input id="query-input" type="text" placeholder="e.g. pacman pathfinding, sudoku, sorting..." 
+          <input id="query-input" type="text" placeholder="Ask a question or request a demo..." 
             class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 pl-3 pr-10 text-sm focus:outline-none focus:border-blue-500 text-slate-100">
           <button id="mic-btn" title="Voice Input" class="absolute right-2 text-slate-400 hover:text-slate-200">
             🎤
           </button>
         </div>
         <button id="analyze-btn" class="w-full mt-3 bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 rounded-lg text-sm transition">
-          Analyze Request
+          Ask AI Engine
         </button>
       </div>
 
-      <!-- Analysis Summary Card -->
+      <!-- Response Panel -->
       <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-4">
-        <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Engine Analysis</h2>
+        <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">AI Response</h2>
         <div id="analysis-summary" class="text-sm text-slate-300 space-y-1">
-          <p class="text-slate-500 italic">Enter a query above to view domain resolution.</p>
-        </div>
-      </div>
-
-      <!-- Ranked Match List -->
-      <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-4">
-        <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Ranked Candidates</h2>
-        <div id="ranked-algorithms" class="space-y-2">
-          <!-- Dynamically populated -->
+          <p class="text-slate-500 italic">Enter your question above to receive an open-ended response.</p>
         </div>
       </div>
     </section>
 
-    <!-- Code & 3D Visualization Section -->
+    <!-- Right Column: 3D Visualization Canvas & Code Output -->
     <section class="lg:col-span-2 space-y-4">
-      <!-- 3D Canvas / Viewport Placeholder -->
-      <div class="bg-slate-950 border border-slate-800 rounded-xl h-64 relative overflow-hidden flex items-center justify-center">
+      <div class="bg-slate-950 border border-slate-800 rounded-xl h-80 relative overflow-hidden flex items-center justify-center">
         <div id="canvas-container" class="absolute inset-0"></div>
         <div class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur px-2.5 py-1 rounded border border-slate-800 text-[11px] font-mono text-slate-400">
-          3D State-Space Graph
+          Dynamic 3D Agent Demonstrator
         </div>
       </div>
 
-      <!-- Code Execution Output -->
       <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
         <div class="flex justify-between items-center mb-2">
-          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Generated Core Logic</span>
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Engine Log / Code Context</span>
         </div>
-        <pre class="bg-slate-900/80 p-3 rounded-lg overflow-x-auto text-xs font-mono text-blue-300 border border-slate-800/80"><code id="code-view">// Execution code will render here...</code></pre>
+        <pre class="bg-slate-900/80 p-3 rounded-lg overflow-x-auto text-xs font-mono text-blue-300 border border-slate-800/80"><code id="code-view">// Execution data will appear here...</code></pre>
       </div>
     </section>
 
   </main>
 
-  <!-- JavaScript Engine -->
   <script>
     /* =========================================================================
-       1. Global Scene & Engine Declarations
+       1. Three.js Scene Setup & Render Loop
        ========================================================================= */
-    let scene, camera, renderer;
-    let nodeMeshes = [], edgeLines = [], agentMesh = null;
-    let animationSteps = [];
+    let scene, camera, renderer, agentMesh;
+    let nodeMeshes = [], edgeLines = [];
+    
+    // Animation trajectory state
+    let targetWaypoints = [];
+    let currentTargetIndex = 0;
+    let isAnimating = false;
 
     function init3D() {
       const container = document.getElementById('canvas-container');
       scene = new THREE.Scene();
+      
       camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-      camera.position.set(0, 12, 16);
+      camera.position.set(0, 14, 16);
       camera.lookAt(0, 0, 0);
 
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(container.clientWidth, container.clientHeight);
       container.appendChild(renderer.domElement);
 
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      // Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
       scene.add(ambientLight);
 
       const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
       dirLight.position.set(10, 20, 10);
       scene.add(dirLight);
 
+      // Create static grid platform
+      buildBaseGrid();
+
+      // Create 3D Agent Object (Glowing Cone)
+      const agentGeo = new THREE.ConeGeometry(0.5, 1.2, 16);
+      const agentMat = new THREE.MeshStandardMaterial({ 
+        color: 0x38bdf8, 
+        emissive: 0x0284c7, 
+        emissiveIntensity: 0.8 
+      });
+      agentMesh = new THREE.Mesh(agentGeo, agentMat);
+      agentMesh.rotation.x = Math.PI / 2;
+      agentMesh.position.set(0, 0.6, 0);
+      scene.add(agentMesh);
+
+      // Frame loop for 60fps movement interpolation
       function animate() {
         requestAnimationFrame(animate);
+
+        // Continuous agent spin
+        if (agentMesh) {
+          agentMesh.rotation.z += 0.03;
+        }
+
+        // Smooth Lerp movement along target path points
+        if (isAnimating && targetWaypoints.length > 0) {
+          const target = targetWaypoints[currentTargetIndex];
+          const targetVec = new THREE.Vector3(target.x, target.y || 0.6, target.z);
+
+          // Move 6% of remaining distance each frame
+          agentMesh.position.lerp(targetVec, 0.06);
+
+          // Advance to next waypoint upon reaching proximity
+          if (agentMesh.position.distanceTo(targetVec) < 0.2) {
+            currentTargetIndex++;
+            if (currentTargetIndex >= targetWaypoints.length) {
+              isAnimating = false; // Stop at end of path
+            }
+          }
+        }
+
         renderer.render(scene, camera);
       }
       animate();
     }
 
-    /* =========================================================================
-       2. Dynamic Universal Algorithm Knowledge Base
-       ========================================================================= */
-    const ALGO_DOMAINS = [
-      {
-        keywords: ['sudoku', 'n-queen', 'backtrack', 'puzzle', 'crossword', 'sat', 'constraint'],
-        primary: "Backtracking Search (Constraint Satisfaction)",
-        summary: "Analyzed constraint satisfaction domain. Solves problems recursively by making tentative assignments and undoing (backtracking) invalid branches upon hitting violations.",
-        code: `// Universal Backtracking Search Template\nfunction solveBacktracking(state) {\n  if (isComplete(state)) return true; // Solution found\n  \n  for (let choice of getValidChoices(state)) {\n    applyChoice(state, choice);\n    if (solveBacktracking(state)) return true;\n    undoChoice(state, choice); // Backtrack step\n  }\n  return false;\n}`,
-        ranked: [
-          { name: "Backtracking Search", score: "99%", time: "O(b^d)", space: "O(d)", desc: "Systematic recursive exploration of candidate solutions with state-reversal." },
-          { name: "Constraint Propagation (AC-3)", score: "88%", time: "O(e * d^3)", space: "O(e)", desc: "Prunes invalid choices upfront to shrink decision tree." },
-          { name: "Dancing Links (DLX / Alg X)", score: "94%", time: "O(V + E)", space: "O(V)", desc: "Knuth's exact cover matrix manipulation technique." }
-        ]
-      },
-      {
-        keywords: ['sort', 'order', 'arrange', 'rank', 'quick', 'merge', 'heap'],
-        primary: "Divide and Conquer (QuickSort / MergeSort)",
-        summary: "Analyzed sequence ordering domain. Deconstructs data collections into smaller sub-problems, sorts sub-arrays recursively, and combines them into an ordered list.",
-        code: `// Universal QuickSort Implementation\nfunction quickSort(arr, low = 0, high = arr.length - 1) {\n  if (low < high) {\n    let pivotIndex = partition(arr, low, high);\n    quickSort(arr, low, pivotIndex - 1);\n    quickSort(arr, pivotIndex + 1, high);\n  }\n  return arr;\n}`,
-        ranked: [
-          { name: "QuickSort", score: "97%", time: "O(N log N)", space: "O(log N)", desc: "In-place partition algorithm optimized for CPU cache efficiency." },
-          { name: "MergeSort", score: "92%", time: "O(N log N)", space: "O(N)", desc: "Stable divide-and-conquer strategy with guaranteed performance." },
-          { name: "HeapSort", score: "86%", time: "O(N log N)", space: "O(1)", desc: "Selection algorithm powered by binary heap priority queues." }
-        ]
-      },
-      {
-        keywords: ['pac', 'ghost', 'path', 'route', 'shortest', 'map', 'gps', 'navigate', 'flight', 'traffic', 'delivery'],
-        primary: "A* Search & Priority Graph Pathfinding",
-        summary: "Analyzed spatial graph navigation domain. Traverses weighted graph nodes by combining actual path cost g(n) with estimated heuristic distance h(n) to destination.",
-        code: `// A* Pathfinding Core Logic\nfunction aStarSearch(start, goal) {\n  let openSet = [start];\n  let gScore = {}, fScore = {};\n  gScore[start] = 0;\n  fScore[start] = heuristic(start, goal);\n\n  while (openSet.length > 0) {\n    let current = getLowestF(openSet, fScore);\n    if (current === goal) return reconstructPath(current);\n    openSet.remove(current);\n    for (let neighbor of getNeighbors(current)) {\n      let tentativeG = gScore[current] + cost(current, neighbor);\n      if (tentativeG < (gScore[neighbor] || Infinity)) {\n        gScore[neighbor] = tentativeG;\n        fScore[neighbor] = tentativeG + heuristic(neighbor, goal);\n        if (!openSet.includes(neighbor)) openSet.push(neighbor);\n      }\n    }\n  }\n}`,
-        ranked: [
-          { name: "A* Search", score: "98%", time: "O(E)", space: "O(V)", desc: "Optimal pathfinding balancing heuristic cost estimates." },
-          { name: "Dijkstra's Algorithm", score: "90%", time: "O(E log V)", space: "O(V)", desc: "Guaranteed shortest path across non-negative weighted edges." },
-          { name: "Breadth-First Search (BFS)", score: "78%", time: "O(V + E)", space: "O(V)", desc: "Explores all node neighbors level-by-level." }
-        ]
-      },
-      {
-        keywords: ['chess', 'game', 'minimax', 'player', 'enemy', 'adversarial', 'tic-tac-toe', 'turn'],
-        primary: "Adversarial Minimax Search with Alpha-Beta Pruning",
-        summary: "Analyzed multi-agent game domain. Evaluates decision trees by maximizing agent score while assuming opponent plays optimal moves.",
-        code: `// Minimax with Alpha-Beta Pruning\nfunction minimax(node, depth, alpha, beta, isMaximizing) {\n  if (depth === 0 || isTerminal(node)) return evaluate(node);\n  if (isMaximizing) {\n    let maxEval = -Infinity;\n    for (let child of getChildren(node)) {\n      let evalVal = minimax(child, depth - 1, alpha, beta, false);\n      maxEval = Math.max(maxEval, evalVal);\n      alpha = Math.max(alpha, evalVal);\n      if (beta <= alpha) break; // Alpha-beta cutoff\n    }\n    return maxEval;\n  }\n}`,
-        ranked: [
-          { name: "Minimax + Alpha-Beta", score: "97%", time: "O(b^(m/2))", space: "O(bm)", desc: "Prunes non-optimal decision branches to speed up search." },
-          { name: "Monte Carlo Tree Search", score: "91%", time: "O(N * Sim)", space: "O(V)", desc: "Uses random rollouts for vast state spaces like Go or Chess." }
-        ]
-      }
-    ];
-
-    function generateDynamicAnalysis(query) {
-      const clean = query.replace(/[^a-zA-Z0-9 ]/g, "").trim();
-      const cap = clean.charAt(0).toUpperCase() + clean.slice(1);
-      return {
-        primary: `Dynamic State-Space Search (${cap})`,
-        summary: `Analyzed customized input "${clean}". Evaluated state space transformations, graph nodes, and heuristic evaluation functions tailored for this scenario.`,
-        code: `// Dynamic Algorithm Engine for: ${cap}\nfunction solveScenario(inputData) {\n  let state = initializeStateSpace(inputData);\n  let frontier = new PriorityQueue();\n  frontier.enqueue(state.root, 0);\n\n  while (!frontier.isEmpty()) {\n    let current = frontier.dequeue();\n    if (isGoalReached(current)) return current.solution;\n    for (let nextState of expandTransitions(current)) {\n      let priority = evaluateHeuristic(nextState);\n      frontier.enqueue(nextState, priority);\n    }\n  }\n  return null;\n}`,
-        ranked: [
-          { name: "State-Space Heuristic Search", score: "94%", time: "O(b^d)", space: "O(b^d)", desc: "Systematically navigates decision transitions using heuristic bounds." },
-          { name: "Dynamic Programming", score: "88%", time: "O(N * K)", space: "O(N)", desc: "Memoizes overlapping sub-problems to prevent duplicate computation." },
-          { name: "Greedy Best-First Search", score: "72%", time: "O(b * m)", space: "O(b * m)", desc: "Selects locally optimal paths at each decision node." }
-        ]
-      };
+    function buildBaseGrid() {
+      const gridHelper = new THREE.GridHelper(20, 20, 0x3b82f6, 0x1e293b);
+      gridHelper.position.y = 0;
+      scene.add(gridHelper);
     }
 
     /* =========================================================================
-       3. Query Processing Engine
+       2. Open-Ended AI Integration via Google Gemini API
        ========================================================================= */
-    function processQuery(queryText) {
-      if (!queryText || queryText.trim() === '') return;
-      const q = queryText.toLowerCase().trim();
+    async function processQuery(queryText) {
+      const apiKey = document.getElementById('api-key-input').value.trim();
+      const summaryContainer = document.getElementById('analysis-summary');
+      const codeView = document.getElementById('code-view');
 
-      let matched = null;
-      for (let domain of ALGO_DOMAINS) {
-        if (domain.keywords.some(k => q.includes(k))) {
-          matched = domain;
-          break;
+      if (!queryText.trim()) return;
+
+      if (!apiKey) {
+        summaryContainer.innerHTML = `<p class="text-red-400 font-semibold">Please paste your Gemini API key in the top input box first.</p>`;
+        return;
+      }
+
+      summaryContainer.innerHTML = `<p class="text-blue-400 animate-pulse">Querying AI Engine & computing 3D motion trajectory...</p>`;
+
+      const systemPrompt = `You are an AI assistant capable of answering open-ended questions. 
+Respond in strict JSON format matching this schema:
+{
+  "answer": "Clear text answer to the user query",
+  "codeSnippet": "Any relevant code snippet or pseudocode context",
+  "path3D": [
+    {"x": number, "y": 0.6, "z": number}
+  ]
+}
+For path3D, provide 3 to 6 spatial coordinates within the bounds x: -8 to 8, z: -8 to 8 to visualize the dynamic state motion for this response.`;
+
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{ text: `${systemPrompt}\n\nUser Question: ${queryText}` }]
+            }],
+            generationConfig: { responseMimeType: "application/json" }
+          })
+        });
+
+        const data = await response.json();
+        
+        if (data.error) {
+          throw new Error(data.error.message);
         }
+
+        const rawText = data.candidates[0].content.parts[0].text;
+        const parsed = JSON.parse(rawText);
+
+        // Update UI
+        summaryContainer.innerHTML = `<p class="text-slate-200 text-xs leading-relaxed">${parsed.answer}</p>`;
+        codeView.innerText = parsed.codeSnippet || "// No specific code generated.";
+
+        // Trigger 3D Trajectory Animation
+        if (parsed.path3D && Array.isArray(parsed.path3D)) {
+          triggerAgentMotion(parsed.path3D);
+        }
+
+      } catch (err) {
+        summaryContainer.innerHTML = `<p class="text-red-400 font-semibold">Error: ${err.message}</p>`;
       }
+    }
 
-      const data = matched || generateDynamicAnalysis(queryText);
-
-      // Render Dashboard Cards
-      document.getElementById('analysis-summary').innerHTML = `
-        <p class="font-semibold text-blue-400">${data.primary}</p>
-        <p class="text-xs text-slate-300 mt-1">${data.summary}</p>
-      `;
-
-      const listContainer = document.getElementById('ranked-algorithms');
-      listContainer.innerHTML = '';
-      data.ranked.forEach((item, index) => {
-        listContainer.innerHTML += `
-          <div class="bg-slate-800/80 border ${index === 0 ? 'border-blue-500/80 shadow-md shadow-blue-500/20' : 'border-slate-700/50'} p-2.5 rounded-lg text-xs hover:border-blue-400 transition cursor-pointer">
-            <div class="flex justify-between font-bold text-slate-200">
-              <span>${index + 1}. ${item.name}</span>
-              <span class="${index === 0 ? 'text-blue-400' : 'text-slate-400'}">${item.score} Match</span>
-            </div>
-            <p class="text-[11px] text-slate-400 mt-1">${item.desc}</p>
-            <div class="flex space-x-3 mt-1.5 text-[10px] text-slate-300 font-mono">
-              <span>Time: ${item.time}</span>
-              <span>Space: ${item.space}</span>
-            </div>
-          </div>
-        `;
-      });
-
-      document.getElementById('code-view').innerText = data.code;
-      build3DGraphVisualization();
+    function triggerAgentMotion(waypoints) {
+      targetWaypoints = waypoints;
+      currentTargetIndex = 0;
+      isAnimating = true;
     }
 
     /* =========================================================================
-       4. 3D Node Generator & Graph Visualizer
-       ========================================================================= */
-    function build3DGraphVisualization() {
-      if (typeof nodeMeshes !== 'undefined') nodeMeshes.forEach(n => scene.remove(n));
-      if (typeof edgeLines !== 'undefined') edgeLines.forEach(e => scene.remove(e));
-      if (typeof agentMesh !== 'undefined' && agentMesh) scene.remove(agentMesh);
-
-      nodeMeshes = [];
-      edgeLines = [];
-
-      const positions = [
-        { x: -6, z: -4 }, { x: -2, z: -4 }, { x: 2, z: -4 }, { x: 6, z: -4 },
-        { x: -6, z: 0 },  { x: 0, z: 0 },   { x: 6, z: 0 },
-        { x: -4, z: 4 },  { x: 4, z: 4 }
-      ];
-
-      const sphereGeo = new THREE.SphereGeometry(0.5, 32, 32);
-      positions.forEach((pos) => {
-        const mat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.3, metalness: 0.8 });
-        const mesh = new THREE.Mesh(sphereGeo, mat);
-        mesh.position.set(pos.x, 0.5, pos.z);
-        scene.add(mesh);
-        nodeMeshes.push(mesh);
-      });
-
-      const connections = [[0,1], [1,2], [2,3], [0,4], [1,5], [3,6], [4,7], [5,7], [5,8], [6,8]];
-      const lineMat = new THREE.LineBasicMaterial({ color: 0x334155, linewidth: 2 });
-
-      connections.forEach(([i, j]) => {
-        const points = [nodeMeshes[i].position, nodeMeshes[j].position];
-        const geometry = new THREE.BufferGeometry().setFromPoints(points);
-        const line = new THREE.Line(geometry, lineMat);
-        scene.add(line);
-        edgeLines.push(line);
-      });
-
-      const agentGeo = new THREE.ConeGeometry(0.4, 1, 16);
-      const agentMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706, emissiveIntensity: 0.6 });
-      agentMesh = new THREE.Mesh(agentGeo, agentMat);
-      agentMesh.rotation.x = Math.PI / 2;
-      agentMesh.position.copy(nodeMeshes[0].position);
-      agentMesh.position.y = 1.2;
-      scene.add(agentMesh);
-    }
-
-    /* =========================================================================
-       5. Event Listeners & Driver Initialization
+       3. Initialization & Event Handlers
        ========================================================================= */
     window.addEventListener('DOMContentLoaded', () => {
       init3D();
 
       document.getElementById('analyze-btn').addEventListener('click', () => {
-        const queryInput = document.getElementById('query-input').value;
-        processQuery(queryInput);
+        const query = document.getElementById('query-input').value;
+        processQuery(query);
       });
 
       document.getElementById('query-input').addEventListener('keypress', (e) => {
@@ -284,6 +242,7 @@
         }
       });
 
+      // Voice recognition integration
       const micBtn = document.getElementById('mic-btn');
       if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
