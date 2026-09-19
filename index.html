@@ -70,9 +70,9 @@
 
   </main>
 
-<script>
+  <script>
     /* =========================================================================
-       1. Enhanced Three.js Scene Setup (Smooth Agent & Better Lighting)
+       1. Enhanced Three.js Scene Setup
        ========================================================================= */
     let scene, camera, renderer, agentGroup;
     let targetWaypoints = [];
@@ -91,7 +91,6 @@
       renderer.setSize(container.clientWidth, container.clientHeight);
       container.appendChild(renderer.domElement);
 
-      // Atmospheric Lighting
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
       scene.add(ambientLight);
 
@@ -103,11 +102,9 @@
       pointLight.position.set(0, 2, 0);
       scene.add(pointLight);
 
-      // Grid Platform
       const gridHelper = new THREE.GridHelper(20, 20, 0x3b82f6, 0x1e293b);
       scene.add(gridHelper);
 
-      // Complex 3D Agent Mesh (Glowing Core + Ring Assembly)
       agentGroup = new THREE.Group();
 
       const coreGeo = new THREE.IcosahedronGeometry(0.5, 2);
@@ -129,7 +126,6 @@
       agentGroup.position.set(0, 0.6, 0);
       scene.add(agentGroup);
 
-      // Animation Loop with Smooth Interpolation & Facing Rotation
       function animate() {
         requestAnimationFrame(animate);
 
@@ -142,17 +138,14 @@
           const target = targetWaypoints[currentTargetIndex];
           const targetVec = new THREE.Vector3(target.x, target.y || 0.6, target.z);
 
-          // Position Interpolation
           agentGroup.position.lerp(targetVec, 0.08);
 
-          // Rotate Agent to Face Target Direction
           const direction = new THREE.Vector3().subVectors(targetVec, agentGroup.position);
           if (direction.lengthSq() > 0.001) {
             const targetRotation = Math.atan2(direction.x, direction.z);
             agentGroup.rotation.y += (targetRotation - agentGroup.rotation.y) * 0.1;
           }
 
-          // Advance Waypoint
           if (agentGroup.position.distanceTo(targetVec) < 0.25) {
             currentTargetIndex++;
             if (currentTargetIndex >= targetWaypoints.length) {
@@ -167,23 +160,23 @@
     }
 
     /* =========================================================================
-       2. Gemini API Call with Algorithm Identification
+       2. Gemini API Call with Updated Model Routes
        ========================================================================= */
-   async function processQuery(queryText) {
-  const apiKey = document.getElementById('api-key-input').value.trim();
-  const summaryContainer = document.getElementById('analysis-summary');
-  const codeView = document.getElementById('code-view');
+    async function processQuery(queryText) {
+      const apiKey = document.getElementById('api-key-input').value.trim();
+      const summaryContainer = document.getElementById('analysis-summary');
+      const codeView = document.getElementById('code-view');
 
-  if (!queryText.trim()) return;
+      if (!queryText.trim()) return;
 
-  if (!apiKey) {
-    summaryContainer.innerHTML = `<p class="text-red-400 font-semibold">Please enter your API key first.</p>`;
-    return;
-  }
+      if (!apiKey) {
+        summaryContainer.innerHTML = `<p class="text-red-400 font-semibold">Please enter your API key first.</p>`;
+        return;
+      }
 
-  summaryContainer.innerHTML = `<p class="text-blue-400 animate-pulse">Analyzing algorithm & computing path...</p>`;
+      summaryContainer.innerHTML = `<p class="text-blue-400 animate-pulse">Analyzing algorithm & computing path...</p>`;
 
-  const systemPrompt = `You are an AI assistant capable of explaining algorithms and spatial concepts. 
+      const systemPrompt = `You are an AI assistant capable of explaining algorithms and spatial concepts. 
 Respond in strict JSON matching this schema:
 {
   "algorithm": "Name of the algorithm/pattern represented by the animation (e.g., A* Search, Binary Tree Traversal, Spiral Interpolation)",
@@ -195,73 +188,72 @@ Respond in strict JSON matching this schema:
 }
 For path3D, provide 4 to 8 spatial coordinates bounded within x: -8 to 8, z: -8 to 8 that visually depict the behavior of the named algorithm.`;
 
-  // List of models to try in sequence
-  const models = ['gemini-1.5-flash', 'gemini-1.5-pro'];
-  let responseData = null;
+      // Updated active models list
+      const models = ['gemini-2.5-flash', 'gemini-2.5-pro'];
+      let responseData = null;
 
-  for (let i = 0; i < models.length; i++) {
-    const currentModel = models[i];
-    try {
-      if (i > 0) {
-        summaryContainer.innerHTML = `<p class="text-amber-400 animate-pulse">Switching to fallback model (${currentModel})...</p>`;
+      for (let i = 0; i < models.length; i++) {
+        const currentModel = models[i];
+        try {
+          if (i > 0) {
+            summaryContainer.innerHTML = `<p class="text-amber-400 animate-pulse">Switching to fallback model (${currentModel})...</p>`;
+          }
+
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{ text: `${systemPrompt}\n\nUser Query: ${queryText}` }]
+              }],
+              generationConfig: { responseMimeType: "application/json" }
+            })
+          });
+
+          const data = await response.json();
+
+          if (data.error) {
+            throw new Error(data.error.message);
+          }
+
+          responseData = data;
+          break;
+
+        } catch (err) {
+          console.warn(`Model ${currentModel} failed:`, err.message);
+          
+          if (i === models.length - 1) {
+            summaryContainer.innerHTML = `<p class="text-red-400 font-semibold">Error across all endpoints: ${err.message}</p>`;
+            return;
+          }
+        }
       }
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{ text: `${systemPrompt}\n\nUser Query: ${queryText}` }]
-          }],
-          generationConfig: { responseMimeType: "application/json" }
-        })
-      });
+      try {
+        const rawText = responseData.candidates[0].content.parts[0].text;
+        const parsed = JSON.parse(rawText);
 
-      const data = await response.json();
+        summaryContainer.innerHTML = `
+          <div class="mb-2 p-2 bg-blue-950/60 border border-blue-800/80 rounded-lg">
+            <span class="text-[10px] uppercase font-bold text-blue-400 block tracking-wider">Active Animation Algorithm</span>
+            <span class="text-xs font-semibold text-teal-300">${parsed.algorithm || "Custom Trajectory Path"}</span>
+          </div>
+          <p class="text-slate-200 text-xs leading-relaxed">${parsed.answer}</p>
+        `;
 
-      if (data.error) {
-        throw new Error(data.error.message);
-      }
+        codeView.innerText = parsed.codeSnippet || "// No algorithmic code provided.";
 
-      responseData = data;
-      break; // Request succeeded, exit the model fallback loop
+        if (parsed.path3D && Array.isArray(parsed.path3D)) {
+          targetWaypoints = parsed.path3D;
+          currentTargetIndex = 0;
+          isAnimating = true;
+        }
 
-    } catch (err) {
-      console.warn(`Model ${currentModel} failed:`, err.message);
-      
-      // If all fallback models fail, display error to the user
-      if (i === models.length - 1) {
-        summaryContainer.innerHTML = `<p class="text-red-400 font-semibold">Error across all endpoints: ${err.message}</p>`;
-        return;
+      } catch (err) {
+        summaryContainer.innerHTML = `<p class="text-red-400 font-semibold">Error parsing response data.</p>`;
       }
     }
-  }
 
-  // Parse and render the successful response
-  try {
-    const rawText = responseData.candidates[0].content.parts[0].text;
-    const parsed = JSON.parse(rawText);
-
-    summaryContainer.innerHTML = `
-      <div class="mb-2 p-2 bg-blue-950/60 border border-blue-800/80 rounded-lg">
-        <span class="text-[10px] uppercase font-bold text-blue-400 block tracking-wider">Active Animation Algorithm</span>
-        <span class="text-xs font-semibold text-teal-300">${parsed.algorithm || "Custom Trajectory Path"}</span>
-      </div>
-      <p class="text-slate-200 text-xs leading-relaxed">${parsed.answer}</p>
-    `;
-
-    codeView.innerText = parsed.codeSnippet || "// No algorithmic code provided.";
-
-    if (parsed.path3D && Array.isArray(parsed.path3D)) {
-      targetWaypoints = parsed.path3D;
-      currentTargetIndex = 0;
-      isAnimating = true;
-    }
-
-  } catch (err) {
-    summaryContainer.innerHTML = `<p class="text-red-400 font-semibold">Error parsing response data.</p>`;
-  }
-}
     /* =========================================================================
        3. Event Listeners
        ========================================================================= */
