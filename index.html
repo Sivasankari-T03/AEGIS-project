@@ -160,7 +160,7 @@
     }
 
     /* =========================================================================
-       2. Gemini API Call with Updated Model Routes
+       2. Gemini API Call with Gemini 3.6 Models
        ========================================================================= */
     async function processQuery(queryText) {
       const apiKey = document.getElementById('api-key-input').value.trim();
@@ -188,8 +188,8 @@ Respond in strict JSON matching this schema:
 }
 For path3D, provide 4 to 8 spatial coordinates bounded within x: -8 to 8, z: -8 to 8 that visually depict the behavior of the named algorithm.`;
 
-      // Updated active models list
-      const models = ['gemini-2.5-flash', 'gemini-2.5-pro'];
+      // Model array updated to use gemini-3.6 endpoints
+      const models = ['gemini-3.6-flash', 'gemini-3.6-pro'];
       let responseData = null;
 
       for (let i = 0; i < models.length; i++) {
