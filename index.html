@@ -72,86 +72,155 @@
 
   <script>
     /* =========================================================================
-       1. Enhanced Three.js Scene Setup
+       1. Enhanced Realistic Three.js Scene & Smooth Motion Interpolation
        ========================================================================= */
-    let scene, camera, renderer, agentGroup;
-    let targetWaypoints = [];
-    let currentTargetIndex = 0;
+    let scene, camera, renderer, agentGroup, outerRing, innerRing, trailParticles, targetMarker;
+    let splineCurve = null;
+    let animationProgress = 0;
     let isAnimating = false;
+    const trailPositions = [];
+    const MAX_TRAIL_POINTS = 50;
 
     function init3D() {
       const container = document.getElementById('canvas-container');
       scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x020617, 0.03);
 
       camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-      camera.position.set(0, 16, 20);
+      camera.position.set(0, 14, 18);
       camera.lookAt(0, 0, 0);
 
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       container.appendChild(renderer.domElement);
 
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      // Lighting Setup
+      const ambientLight = new THREE.AmbientLight(0x1e293b, 1.5);
       scene.add(ambientLight);
 
-      const dirLight = new THREE.DirectionalLight(0x38bdf8, 1.2);
-      dirLight.position.set(10, 20, 10);
-      scene.add(dirLight);
+      const mainSpot = new THREE.SpotLight(0x38bdf8, 3);
+      mainSpot.position.set(0, 20, 10);
+      mainSpot.angle = Math.PI / 4;
+      mainSpot.penumbra = 0.8;
+      scene.add(mainSpot);
 
-      const pointLight = new THREE.PointLight(0x38bdf8, 2, 20);
-      pointLight.position.set(0, 2, 0);
-      scene.add(pointLight);
+      const secondaryLight = new THREE.PointLight(0x2dd4bf, 2, 30);
+      secondaryLight.position.set(-10, -5, -10);
+      scene.add(secondaryLight);
 
-      const gridHelper = new THREE.GridHelper(20, 20, 0x3b82f6, 0x1e293b);
+      // Grid Base
+      const gridHelper = new THREE.GridHelper(24, 24, 0x0284c7, 0x1e293b);
+      gridHelper.position.y = -0.01;
       scene.add(gridHelper);
 
+      // Agent Group Setup
       agentGroup = new THREE.Group();
 
-      const coreGeo = new THREE.IcosahedronGeometry(0.5, 2);
-      const coreMat = new THREE.MeshStandardMaterial({
+      // Glowing Glass Core
+      const coreGeo = new THREE.IcosahedronGeometry(0.5, 3);
+      const coreMat = new THREE.MeshPhysicalMaterial({
         color: 0x38bdf8,
         emissive: 0x0284c7,
-        emissiveIntensity: 1,
-        roughness: 0.2
+        emissiveIntensity: 0.8,
+        roughness: 0.1,
+        metalness: 0.1,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.1
       });
       const coreMesh = new THREE.Mesh(coreGeo, coreMat);
 
-      const ringGeo = new THREE.TorusGeometry(0.9, 0.04, 16, 100);
-      const ringMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
-      ringMesh.rotation.x = Math.PI / 2;
+      // Outer & Inner Gyro Rings
+      const ringGeo1 = new THREE.TorusGeometry(0.85, 0.03, 16, 100);
+      const ringMat1 = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.8, roughness: 0.2 });
+      outerRing = new THREE.Mesh(ringGeo1, ringMat1);
+
+      const ringGeo2 = new THREE.TorusGeometry(0.68, 0.02, 16, 100);
+      const ringMat2 = new THREE.MeshStandardMaterial({ color: 0x2dd4bf, metalness: 0.9, roughness: 0.1 });
+      innerRing = new THREE.Mesh(ringGeo2, ringMat2);
 
       agentGroup.add(coreMesh);
-      agentGroup.add(ringMesh);
+      agentGroup.add(outerRing);
+      agentGroup.add(innerRing);
       agentGroup.position.set(0, 0.6, 0);
       scene.add(agentGroup);
+
+      // Motion Trail Particles
+      const trailGeo = new THREE.BufferGeometry();
+      const positions = new Float32Array(MAX_TRAIL_POINTS * 3);
+      trailGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      
+      const trailMat = new THREE.PointsMaterial({
+        color: 0x38bdf8,
+        size: 0.15,
+        transparent: true,
+        opacity: 0.6,
+        blending: THREE.AdditiveBlending
+      });
+      trailParticles = new THREE.Points(trailGeo, trailMat);
+      scene.add(trailParticles);
+
+      // Target Waypoint Pulse Marker
+      const targetGeo = new THREE.RingGeometry(0.3, 0.45, 32);
+      const targetMat = new THREE.MeshBasicMaterial({ color: 0x2dd4bf, side: THREE.DoubleSide, transparent: true, opacity: 0 });
+      targetMarker = new THREE.Mesh(targetGeo, targetMat);
+      targetMarker.rotation.x = Math.PI / 2;
+      scene.add(targetMarker);
+
+      // Resize Handler
+      window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+      });
 
       function animate() {
         requestAnimationFrame(animate);
 
+        // Continuous local rotations
         if (agentGroup) {
-          ringMesh.rotation.z += 0.04;
-          coreMesh.rotation.y += 0.02;
+          outerRing.rotation.x += 0.02;
+          outerRing.rotation.y += 0.03;
+          innerRing.rotation.y -= 0.04;
+          innerRing.rotation.z += 0.02;
+          coreMesh.rotation.y += 0.01;
         }
 
-        if (isAnimating && targetWaypoints.length > 0) {
-          const target = targetWaypoints[currentTargetIndex];
-          const targetVec = new THREE.Vector3(target.x, target.y || 0.6, target.z);
-
-          agentGroup.position.lerp(targetVec, 0.08);
-
-          const direction = new THREE.Vector3().subVectors(targetVec, agentGroup.position);
-          if (direction.lengthSq() > 0.001) {
-            const targetRotation = Math.atan2(direction.x, direction.z);
-            agentGroup.rotation.y += (targetRotation - agentGroup.rotation.y) * 0.1;
+        // Realistic Spline Trajectory Motion
+        if (isAnimating && splineCurve) {
+          animationProgress += 0.0035; // Motion speed
+          if (animationProgress > 1) {
+            animationProgress = 1;
+            isAnimating = false;
+            targetMarker.material.opacity = 0;
           }
 
-          if (agentGroup.position.distanceTo(targetVec) < 0.25) {
-            currentTargetIndex++;
-            if (currentTargetIndex >= targetWaypoints.length) {
-              isAnimating = false;
-            }
+          // Fetch smooth point along curve
+          const point = splineCurve.getPointAt(animationProgress);
+          const tangent = splineCurve.getTangentAt(animationProgress);
+
+          agentGroup.position.copy(point);
+          
+          // Realistic banking/orientation towards directional vector
+          const lookAtTarget = point.clone().add(tangent);
+          agentGroup.lookAt(lookAtTarget);
+
+          // Update Pulse Target Marker position
+          const endPoint = splineCurve.getPointAt(1);
+          targetMarker.position.set(endPoint.x, 0.05, endPoint.z);
+          targetMarker.material.opacity = 0.4 + Math.sin(Date.now() * 0.008) * 0.3;
+
+          // Trail Updates
+          trailPositions.unshift(point.clone());
+          if (trailPositions.length > MAX_TRAIL_POINTS) trailPositions.pop();
+
+          const posArr = trailParticles.geometry.attributes.position.array;
+          for (let i = 0; i < trailPositions.length; i++) {
+            posArr[i * 3] = trailPositions[i].x;
+            posArr[i * 3 + 1] = trailPositions[i].y;
+            posArr[i * 3 + 2] = trailPositions[i].z;
           }
+          trailParticles.geometry.attributes.position.needsUpdate = true;
         }
 
         renderer.render(scene, camera);
@@ -160,7 +229,7 @@
     }
 
     /* =========================================================================
-       2. Gemini API Call with Gemini 3.6 Models
+       2. Gemini API Call with Valid Gemini Endpoints
        ========================================================================= */
     async function processQuery(queryText) {
       const apiKey = document.getElementById('api-key-input').value.trim();
@@ -186,10 +255,10 @@ Respond in strict JSON matching this schema:
     {"x": number, "y": 0.6, "z": number}
   ]
 }
-For path3D, provide 4 to 8 spatial coordinates bounded within x: -8 to 8, z: -8 to 8 that visually depict the behavior of the named algorithm.`;
+For path3D, provide 5 to 10 spatial coordinates bounded within x: -8 to 8, z: -8 to 8 that visually depict the behavior of the named algorithm.`;
 
-      // Model array updated to use gemini-3.6 endpoints
-      const models = ['gemini-3.6-flash', 'gemini-3.6-pro'];
+      // Corrected production model endpoints for Gemini v1beta
+      const models = ['gemini-1.5-flash', 'gemini-1.5-pro'];
       let responseData = null;
 
       for (let i = 0; i < models.length; i++) {
@@ -243,10 +312,13 @@ For path3D, provide 4 to 8 spatial coordinates bounded within x: -8 to 8, z: -8 
 
         codeView.innerText = parsed.codeSnippet || "// No algorithmic code provided.";
 
-        if (parsed.path3D && Array.isArray(parsed.path3D)) {
-          targetWaypoints = parsed.path3D;
-          currentTargetIndex = 0;
+        // Construct Smooth Curve Spline from Path Waypoints
+        if (parsed.path3D && Array.isArray(parsed.path3D) && parsed.path3D.length > 1) {
+          const curvePoints = parsed.path3D.map(p => new THREE.Vector3(p.x, p.y || 0.6, p.z));
+          splineCurve = new THREE.CatmullRomCurve3(curvePoints, false, 'centripetal');
+          animationProgress = 0;
           isAnimating = true;
+          trailPositions.length = 0;
         }
 
       } catch (err) {
